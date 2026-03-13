@@ -330,6 +330,6 @@ values ('todo', 'ToDo', 3, 'in_progress,canceled|'),
 drop index UK_USER_BELONG;
 create unique index UK_USER_BELONG on USER_BELONG (OBJECT_ID, OBJECT_TYPE, USER_ID, USER_TYPE_CODE) where ENDPOINT is null;
 
---changeset delete VK and Yandex from Reference
+--changeset kostkhar:delete_VK_and_Yandex_from_Reference_COde
 delete from REFERENCE where CODE = 'vk';
 delete from CONTACT where id = 2 and code = 'vk';
