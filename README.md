@@ -39,4 +39,9 @@
 ##  Комментарий
 Локально создан файл .env, куда вынесены все нужные переменные, приложение стартует и работает.
 Для настройки переменных в GitHub Actions необходимо:
-Settings → Security → Secrets and variables → Actions → Secrets и заполнить мапу ключ значения по соответствию 
+Settings → Security → Secrets and variables → Actions → Secrets и заполнить нужные environment 
+
+GitLab:
+1. В боковом меню перейдите Settings → CI/CD .
+2. Разверните блок Variables.
+3. Нажмите кнопку Add variable .
