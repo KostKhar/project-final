@@ -21,13 +21,12 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import java.util.List;
 import java.util.Set;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 class ProfileRestControllerTest extends AbstractControllerTest {
 
@@ -59,14 +58,15 @@ class ProfileRestControllerTest extends AbstractControllerTest {
                 new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
 
         when(profileRepository.getOrCreate(user.id())).thenReturn(profile);
+        when(profileMapper.toTo(profile)).thenReturn(new ProfileTo(user.id(), null, null));
 
         perform(get("/api/profile")
-                        .with(SecurityMockMvcRequestPostProcessors.authentication(auth)))
+                .with(SecurityMockMvcRequestPostProcessors.authentication(auth)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L));
+
         verify(profileRepository).getOrCreate(authUser.id());
-        verify(profileMapper).updateFromTo(any(Profile.class), any(ProfileTo.class));
-        verify(profileRepository).save(any(Profile.class));
+        verify(profileMapper).toTo(profile);
     }
 
     @Test
@@ -80,10 +80,6 @@ class ProfileRestControllerTest extends AbstractControllerTest {
         user.setPassword("password");
         user.setRoles(List.of(Role.ADMIN));
 
-        Profile profile = new Profile(user.id());
-
-        when(profileRepository.getOrCreate(user.id())).thenReturn(profile);
-
         perform(get("/api/profile"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.title").value("Unauthorized"))
@@ -92,29 +88,18 @@ class ProfileRestControllerTest extends AbstractControllerTest {
 
     @Test
     void checkUserUpdateProfileWithoutAuth() throws Exception {
-        User user = new User();
-        user.setId(1L);
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setDisplayName("John Doe");
-        user.setEmail("john@example.com");
-        user.setPassword("password");
-        user.setRoles(List.of(Role.DEV));
-
-
         User admin = new User();
         admin.setId(5L);
-        user.setFirstName("Tom");
-        user.setLastName("Khan");
-        user.setDisplayName("Tom Khan");
-        user.setEmail("admin@example.com");
-        user.setPassword("password");
-        user.setRoles(List.of(Role.ADMIN));
+        admin.setFirstName("Tom");
+        admin.setLastName("Khan");
+        admin.setDisplayName("Tom Khan");
+        admin.setEmail("admin@example.com");
+        admin.setPassword("password");
+        admin.setRoles(List.of(Role.ADMIN));
 
+        ProfileTo profileTo = new ProfileTo(5L, Set.of("google"), Set.of(new ContactTo("1111", "neworg@gmail.com")));
 
-        ProfileTo profileTo = new ProfileTo(2L, Set.of("google"), Set.of(new ContactTo("1111", "neworg@gmail.com")));
-
-        String jsonBody = new ObjectMapper().writeValueAsString(profileTo);
+        String jsonBody = objectMapper.writeValueAsString(profileTo);
 
         perform(put("/api/profile")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -124,40 +109,31 @@ class ProfileRestControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    void checkAdminUpdateProfile() throws Exception {
-        User user = new User();
-        user.setId(1L);
-        user.setFirstName("John");
-        user.setLastName("Doe");
-        user.setDisplayName("John Doe");
-        user.setEmail("john@example.com");
-        user.setPassword("password");
-        user.setRoles(List.of(Role.DEV));
+    void checkManagerUpdateProfile() throws Exception {
 
+        User manager = new User();
+        manager.setId(5L);
+        manager.setFirstName("Tom");
+        manager.setLastName("Khan");
+        manager.setDisplayName("Tom Khan");
+        manager.setEmail("admin@example.com");
+        manager.setPassword("password");
+        manager.setRoles(List.of(Role.MANAGER));
 
-        User admin = new User();
-        admin.setId(5L);
-        user.setFirstName("Tom");
-        user.setLastName("Khan");
-        user.setDisplayName("Tom Khan");
-        user.setEmail("admin@example.com");
-        user.setPassword("password");
-        user.setRoles(List.of(Role.ADMIN));
-
-        AuthUser authUser = new AuthUser(admin);
+        AuthUser authUser = new AuthUser(manager);
 
 
         UsernamePasswordAuthenticationToken auth =
                 new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
 
-        Profile profile = new Profile(user.id());
+        Profile profile = new Profile(manager.id());
 
-        ProfileTo profileTo = new ProfileTo(2L, null, null);
+        ProfileTo profileTo = new ProfileTo(manager.id(), null, null);
 
         String jsonBody = objectMapper.writeValueAsString(profileTo);
 
-        when(profileRepository.getOrCreate(user.id())).thenReturn(profile);
-        when(profileMapper.updateFromTo(profileRepository.getOrCreate(profileTo.id()), profileTo)).thenReturn(profile);
+        when(profileRepository.getOrCreate(profileTo.id())).thenReturn(profile);
+        when(profileMapper.updateFromTo(profile, profileTo)).thenReturn(profile);
 
         perform(put("/api/profile")
                 .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
@@ -165,13 +141,83 @@ class ProfileRestControllerTest extends AbstractControllerTest {
                 .content(jsonBody))
                 .andExpect(status().isNoContent());
 
-        verify(profileRepository).getOrCreate(user.id());
-        verify(profileMapper).updateFromTo(profileRepository.getOrCreate(profileTo.id()), profileTo);
+        verify(profileRepository).getOrCreate(profileTo.id());
+        verify(profileMapper).updateFromTo(profile, profileTo);
         verify(profileRepository).save(profile);
     }
 
+    @Test
+    void updateProfileToAndAuthUserAssureIdNotConsistent_returnError() throws Exception {
+        User manager = new User();
+        manager.setId(5L);
+        manager.setFirstName("Tom");
+        manager.setLastName("Khan");
+        manager.setDisplayName("Tom Khan");
+        manager.setEmail("admin@example.com");
+        manager.setPassword("password");
+        manager.setRoles(List.of(Role.MANAGER));
+
+        User user = new User();
+        user.setId(1L);
+
+        AuthUser authUser = new AuthUser(user);
 
 
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
+
+        ProfileTo profileTo = new ProfileTo(manager.id(), null, null);
+
+        String jsonBody = objectMapper.writeValueAsString(profileTo);
+
+
+        perform(put("/api/profile")
+                .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonBody))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.title").value("Unprocessable Entity"));
+    }
+
+
+    @Test
+    void update_ProfileTo_GetContacts_AuthUser_AssureIdNotConsistent_returnError() throws Exception {
+        User manager = new User();
+        manager.setId(5L);
+        manager.setFirstName("Tom");
+        manager.setLastName("Khan");
+        manager.setDisplayName("Tom Khan");
+        manager.setEmail("admin@example.com");
+        manager.setPassword("password");
+        manager.setRoles(List.of(Role.MANAGER));
+
+        User user = new User();
+        user.setId(1L);
+
+        AuthUser authUser = new AuthUser(user);
+
+
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities());
+
+        String jsonBody = "{"
+                + "\"id\":1,"
+                + "\"mailNotifications\":[],"
+                + "\"contacts\":[{"
+                + "\"id\":10,"
+                + "\"code\":\"tg\","
+                + "\"value\":\"contactValue\""
+                + "}]"
+                + "}";
+
+
+        perform(put("/api/profile")
+                .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonBody))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.title").value("Unprocessable Entity"));
+    }
 
 
 }
