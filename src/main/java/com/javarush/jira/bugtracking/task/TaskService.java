@@ -140,4 +140,20 @@ public class TaskService {
             throw new DataConflictException(String.format(assign ? CANNOT_ASSIGN : CANNOT_UN_ASSIGN, userType, task.getStatusCode()));
         }
     }
+
+    public synchronized void changeTag(long taskId, String tag) {
+        Assert.notNull(tag, "the tag must not be null");
+        tag = tag.trim().toLowerCase();
+
+        if(tag.length() < 2 || tag.length() > 32) {
+            throw new IllegalArgumentException("Invalid tag");
+        }
+        Task task = handler.getRepository().getExisted(taskId);
+
+        if(task.getTags().contains(tag)){
+            throw new DataConflictException(String.format( "%s already exists for task", tag));
+        }
+            task.getTags().add(tag);
+            handler.update(task, taskId);
+    }
 }
