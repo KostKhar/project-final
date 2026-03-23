@@ -1,7 +1,6 @@
 package com.javarush.jira.bugtracking.task;
 
 import com.javarush.jira.common.BaseRepository;
-import jakarta.persistence.NamedQuery;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

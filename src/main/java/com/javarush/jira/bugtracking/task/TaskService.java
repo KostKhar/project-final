@@ -146,13 +146,13 @@ public class TaskService {
         Assert.notNull(tag, "the tag must not be null");
         tag = tag.trim().toLowerCase();
 
-        if(tag.length() < 2 || tag.length() > 32) {
+        if (tag.length() < 2 || tag.length() > 32) {
             throw new IllegalArgumentException("Invalid tag");
         }
         List<String> tagList = handler.getRepository().findAllTagsByTaskId(taskId);
 
-        if(tagList.contains(tag)){
-            throw new DataConflictException(String.format( "%s already exists for task", tag));
+        if (tagList.contains(tag)) {
+            throw new DataConflictException(String.format("%s already exists for task", tag));
         }
 
         handler.getRepository().insertTag(taskId, tag);
