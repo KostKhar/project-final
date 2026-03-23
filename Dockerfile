@@ -7,13 +7,11 @@ COPY src ./src
 RUN mvn clean package -Pprod -DskipTests
 
 # --- Runtime Stage ---
-FROM eclipse-temurin:17-jdk-slim
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-COPY config/nginx.conf ./config/
-COPY resources/view ./resources/view
-COPY resources/mail ./resources/mail
-COPY resources/static ./resources/static
+COPY ./config ./app/config/
+COPY ./resources ./app/resources/
 
 RUN addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 --gid 1001 appuser
