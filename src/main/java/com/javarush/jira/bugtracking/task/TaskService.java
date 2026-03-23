@@ -141,19 +141,20 @@ public class TaskService {
         }
     }
 
-    public synchronized void changeTag(long taskId, String tag) {
+    @Transactional
+    public synchronized void addTag(long taskId, String tag) {
         Assert.notNull(tag, "the tag must not be null");
         tag = tag.trim().toLowerCase();
 
         if(tag.length() < 2 || tag.length() > 32) {
             throw new IllegalArgumentException("Invalid tag");
         }
-        Task task = handler.getRepository().getExisted(taskId);
+        List<String> tagList = handler.getRepository().findAllTagsByTaskId(taskId);
 
-        if(task.getTags().contains(tag)){
+        if(tagList.contains(tag)){
             throw new DataConflictException(String.format( "%s already exists for task", tag));
         }
-            task.getTags().add(tag);
-            handler.update(task, taskId);
+
+        handler.getRepository().insertTag(taskId, tag);
     }
 }
