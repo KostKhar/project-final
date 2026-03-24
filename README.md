@@ -26,5 +26,7 @@
 
 - https://habr.com/ru/articles/259055/
 
-Список выполненных задач:
-...
+## Список выполненных задач:
+9. Написать Dockerfile для основного сервера
+10. Написать docker-compose файл для запуска контейнера сервера вместе с БД и nginx. Для nginx используй конфиг-файл config/nginx.conf. При необходимости файл конфига можно редактировать. Hard task
+Для запуска приложения открыть Docker Desktop и запустить команду "docker compose build --no-cache app && docker compose up"

@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: jira
+      POSTGRES_PASSWORD: JiraRush
+      POSTGRES_DB: jira
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+
+  test_db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: jira
+      POSTGRES_PASSWORD: JiraRush
+      POSTGRES_DB: jira-test
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - backend
+
+  app:
+    build: .
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/jira
+      SPRING_DATASOURCE_USERNAME: jira
+      SPRING_DATASOURCE_PASSWORD: JiraRush
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - nginx
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - backend
+
+volumes:
+  postgres_data:
+  postgres_test_data:
+
+networks:
+  backend:
+    driver: bridge
