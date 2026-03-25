@@ -590,4 +590,25 @@ class TaskControllerTest extends AbstractControllerTest {
                 .andExpect(jsonPath("$.detail", is(String
                         .format("Not found assignment with userType=%s for task {%d} for user {%d}", TASK_DEVELOPER, TASK1_ID, ADMIN_ID))));
     }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void checkAddTaskTag() throws Exception {
+        String tag = "NewTag";
+
+        perform(MockMvcRequestBuilders.patch(TASKS_REST_URL_SLASH + TASK2_ID + "/tag")
+                .content(tag))
+                .andExpect(status().isNoContent());
+    }
+
+
+    @Test
+    void addTaskTagByInvalidToken() throws Exception {
+        String tag = "NewTag";
+
+        perform(MockMvcRequestBuilders.patch(TASKS_REST_URL_SLASH + TASK2_ID+"/tag")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(tag))
+                .andExpect(status().isUnauthorized());
+    }
 }

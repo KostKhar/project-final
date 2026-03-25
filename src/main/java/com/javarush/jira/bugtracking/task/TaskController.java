@@ -100,6 +100,13 @@ public class TaskController {
         taskService.changeStatus(id, statusCode);
     }
 
+    @PatchMapping("/{id}/tag")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addTag(@PathVariable long id, @NotBlank @RequestBody String tag) {
+        log.info("add task(id={}) tag  {}", id, tag);
+        taskService.addTag(id, tag);
+    }
+
     @PatchMapping("/{id}/change-sprint")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changeTaskSprint(@PathVariable long id, @Nullable @RequestParam Long sprintId) {
@@ -156,4 +163,6 @@ public class TaskController {
             this(taskTo, new LinkedList<>());
         }
     }
+
+
 }
