@@ -39,7 +39,7 @@ public interface TaskRepository extends BaseRepository<Task> {
             """, nativeQuery = true)
     void setTaskAndSubTasksSprint(long taskId, Long sprintId);
 
-    @Query("SELECT tag FROM Task t JOIN FETCH t.tags tag WHERE t.id = :taskId")
+    @Query("SELECT tag FROM Task t JOIN t.tags tag WHERE t.id = :taskId")
     List<String> findAllTagsByTaskId(long taskId);
 
     @Modifying

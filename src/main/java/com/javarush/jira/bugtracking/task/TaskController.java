@@ -102,7 +102,7 @@ public class TaskController {
 
     @PatchMapping("/{id}/tag")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void addTag(@PathVariable long id, @NotBlank @RequestParam String tag) {
+    public void addTag(@PathVariable long id, @NotBlank @RequestBody String tag) {
         log.info("add task(id={}) tag  {}", id, tag);
         taskService.addTag(id, tag);
     }
